@@ -3,13 +3,13 @@ package com.example.text.viewmodel
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
-import com.example.text.CipherType
+import com.example.text.ciphers.CipherType
 import com.example.text.ciphers.crc16_checksum.CRC16CheckSum
 import com.example.text.ciphers.crc32_checksum.CRC32CheckSum
 import com.example.text.ciphers.md5_hash.MD5
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import nadirian.hamlet.android.encdecapp.model.american_standard_code_for_information_interchange.ASCIIEncryptor
 import nadirian.hamlet.android.encdecapp.model.base64.Base64Encoding
 import nadirian.hamlet.android.encdecapp.model.sha256_hash.SHA256

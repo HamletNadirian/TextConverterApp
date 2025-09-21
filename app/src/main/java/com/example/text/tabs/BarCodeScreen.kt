@@ -11,7 +11,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.text.viewmodel.BarCodeGenerator.BarcodeFromGalleryScreen
+import com.example.text.viewmodel.BarCodeUiState
 import com.example.text.viewmodel.BarCodeViewModel
 import java.io.IOException
 
@@ -42,8 +43,9 @@ fun BarCodeScreen(viewModel: BarCodeViewModel = viewModel()) {
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp),
+            .fillMaxWidth()
+            .fillMaxHeight()
+            .padding(bottom = 16.dp),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -54,45 +56,60 @@ fun BarCodeScreen(viewModel: BarCodeViewModel = viewModel()) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
-            singleLine = true,
             textStyle = LocalTextStyle.current,
         )
-
-        Button(
-            onClick = {
-                viewModel.generateBarCode(state.inputText)
-            },
-            modifier = Modifier.padding(bottom = 16.dp)
-        ) {
-            Text("Generate Barcode")
-        }
-
-        state.generatedBitmap?.let { bitmap ->
-            Image(
-                bitmap = bitmap.asImageBitmap(),
-                contentDescription = "Generated barcode",
-                modifier = Modifier.padding(top = 16.dp)
-            )
-
-
-        }
-        val context = LocalContext.current
-        Button(onClick = {
-            state.generatedBitmap?.let {
-                val success = saveBitmapToGallery(context, it)
-                Toast.makeText(
-                    context,
-                    if (success) "Saved!" else "First, create a Barcode.",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }) {
-            Text("Сохранить")
-        }
+        GenerateBarcodeButton(viewModel, state)
+        SavedBaracodeImage(state)
         BarcodeFromGalleryScreen()
+    }
+
+
+}
+
+@Composable
+private fun SavedBaracodeImage(state: BarCodeUiState) {
+    val context = LocalContext.current
+    Button(onClick = {
+        state.generatedBitmap?.let {
+            val success = saveBitmapToGallery(context, it)
+            Toast.makeText(
+                context,
+                if (success) "Saved!" else "First, create a Barcode.",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }, Modifier.fillMaxWidth()) {
+        Text("Saved")
+    }
+}
+
+@Composable
+private fun GenerateBarcodeButton(
+    viewModel: BarCodeViewModel,
+    state: BarCodeUiState
+) {
+    Button(
+        onClick = {
+            viewModel.generateBarCode(state.inputText)
+        },
+        modifier = Modifier
+
+            .fillMaxWidth()
+    ) {
+        Text("Generate Barcode")
+    }
+
+    state.generatedBitmap?.let { bitmap ->
+        Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = "Generated barcode",
+            modifier = Modifier.padding(top = 16.dp)
+        )
+
 
     }
 }
+
 @Composable
 fun UiGallery(
     bitmap: Bitmap?,
@@ -100,13 +117,11 @@ fun UiGallery(
     onImagePickClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier,
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button(onClick = onImagePickClick) {
+        Button(onClick = onImagePickClick, Modifier.fillMaxWidth()) {
             Text("Select an image")
         }
 
