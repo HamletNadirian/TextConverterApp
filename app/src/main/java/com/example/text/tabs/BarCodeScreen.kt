@@ -3,13 +3,9 @@ package com.example.text.tabs
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.ImageDecoder
-import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -26,20 +22,16 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.text.viewmodel.BarCodeViewModel
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
 import com.example.text.viewmodel.BarCodeGenerator.BarcodeFromGalleryScreen
-
+import com.example.text.viewmodel.BarCodeViewModel
 import java.io.IOException
 
 
@@ -90,7 +82,7 @@ fun BarCodeScreen(viewModel: BarCodeViewModel = viewModel()) {
                 val success = saveBitmapToGallery(context, it)
                 Toast.makeText(
                     context,
-                    if (success) "Сохранено!" else "Сначала создайте QR-код",
+                    if (success) "Saved!" else "First, create a Barcode.",
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -115,7 +107,7 @@ fun UiGallery(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Button(onClick = onImagePickClick) {
-            Text("Выбрать изображение")
+            Text("Select an image")
         }
 
         bitmap?.let {
