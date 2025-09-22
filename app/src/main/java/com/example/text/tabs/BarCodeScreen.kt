@@ -45,7 +45,7 @@ fun BarCodeScreen(viewModel: BarCodeViewModel = viewModel()) {
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
-            .padding(bottom = 16.dp),
+            .padding(16.dp),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -103,7 +103,7 @@ private fun GenerateBarcodeButton(
         Image(
             bitmap = bitmap.asImageBitmap(),
             contentDescription = "Generated barcode",
-            modifier = Modifier.padding(top = 16.dp)
+            modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
         )
 
 

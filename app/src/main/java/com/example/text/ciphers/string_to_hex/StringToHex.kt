@@ -26,22 +26,21 @@ object StringToHex {
         val matcher: Matcher = HEXADECIMAL_PATTERN.matcher(input)
         return matcher.matches()
     }
-     fun convertHexToString(input: String?): String? {
-         var hex = input?.replace("\\s".toRegex(), "")
-        var result = ""
-         if (input?.let { isHexadecimal(it) } == true){
-             result = try {
-                 val bytes = Hex.decodeHex(hex)
-                 String(bytes, StandardCharsets.UTF_8)
-             } catch (e: IllegalArgumentException) {
-                 throw IllegalArgumentException("Invalid Hex format!")
-             }
-         }
-         else{
-             result = "Invalid Hex format"
-         }
+    fun convertHexToString(input: String?): String {
+        if (input.isNullOrBlank()) return "Invalid Hex format"
 
-        return result
+        val hex = input.replace("\\s".toRegex(), "")
+        return if (isHexadecimal(hex)) {
+            try {
+                val bytes = Hex.decodeHex(hex.toCharArray())
+                String(bytes, StandardCharsets.UTF_8)
+            } catch (e: Exception) {
+                "Invalid Hex format"
+            }
+        } else {
+            "Invalid Hex format"
+        }
     }
+
 
 }

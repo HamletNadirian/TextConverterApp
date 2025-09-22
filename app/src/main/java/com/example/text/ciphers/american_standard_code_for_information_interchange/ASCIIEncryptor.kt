@@ -3,23 +3,28 @@ package nadirian.hamlet.android.encdecapp.model.american_standard_code_for_infor
 object ASCIIEncryptor {
     fun processASCII(text: String, isEncryption: Boolean): String {
         return if (isEncryption) {
-            ASCIIEncryptor.stringToACII(text)
+            stringToACII(text)
         } else {
-            ASCIIEncryptor.asciiToString(text)
+            asciiToString(text)
         }
     }
-       fun asciiToString(str: String):String {
-        var num = 0
+    fun asciiToString(str: String): String {
+        // Разделяем входную строку на массив чисел по пробелам
+        val asciiCodes = str.split(" ")
         var resultString = ""
-        var codeZeroOfBytes = '0'.code
-        for (element in str) {
-            num = num * 10 + (element.code - codeZeroOfBytes)
-            if (num in 32..122) {
-                val ch = num.toChar()
-                num = 0
-                resultString+=ch
+
+        for (code in asciiCodes) {
+            try {
+                val num = code.toInt()
+                if (num in 32..122) {
+                    resultString += num.toChar()
+                }
+            } catch (e: NumberFormatException) {
+                // Игнорируем некорректные числа
+                continue
             }
         }
+
         return resultString
     }
      fun stringToACII(string: String): String {
