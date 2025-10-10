@@ -1,6 +1,8 @@
 package com.example.text.viewmodel
 
+import UiGallery
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
@@ -16,10 +18,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
 import androidx.lifecycle.ViewModel
-import com.example.text.tabs.UiGallery
-import com.example.text.viewmodel.BarCodeGenerator.generate
+import com.example.text.viewmodel.BarCodeGenerator.generateBarcode
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.MultiFormatWriter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -29,45 +32,103 @@ data class BarCodeUiState(
     val inputText: String = "",
     val generatedBitmap: Bitmap? = null,
     val galleryBitmap: Bitmap? = null,
-    val decodedText: String? = null
+    val decodedText: String? = null,
+    val selectedBarcodeType: String = "QR_CODE",
+    val errorMessage: String? = null
 )
 
 class BarCodeViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(BarCodeUiState())
     val uiState: StateFlow<BarCodeUiState> = _uiState
+
     fun updateInput(text: String) {
-        _uiState.update { it.copy(inputText = text) }
+        val currentState = _uiState.value
+        val filtered = if (listOf("ITF").contains(currentState.selectedBarcodeType)) {
+            text.filter { char: Char -> char.isDigit() }  // Явный параметр: char: Char
+        } else {
+            text
+        }
+        _uiState.update { it.copy(inputText = filtered) }
+    }
+
+    fun updateBarcodeType(type: String) {
+        _uiState.update { it.copy(selectedBarcodeType = type) }
     }
 
     fun generateBarCode(text: String) {
-        val bitmap = generate(text)
+
+        val currentState = _uiState.value
+        val format = try {
+            BarcodeFormat.valueOf(currentState.selectedBarcodeType)
+        } catch (e: IllegalArgumentException) {
+            BarcodeFormat.QR_CODE
+        }
+        val bitmap = generateBarcode(
+            text,
+            format
+        )
+        if (bitmap == null) {
+            _uiState.update {
+                it.copy(
+                    errorMessage = "Ошибка генерации: неверный ввод или формат",
+                    generatedBitmap = null
+                )
+            }
+        } else {
+            _uiState.update { it.copy(generatedBitmap = bitmap, errorMessage = null) }
+        }
         _uiState.update { it.copy(generatedBitmap = bitmap) }
     }
 
+    private fun validateInput(text: String, format: BarcodeFormat): String? {
+        val digitsOnly = text.filter { char: Char -> char.isDigit() }
+        val length = digitsOnly.length
+        return when (format) {
+
+            BarcodeFormat.ITF -> if (length % 2 == 0 && length >= 6) null else "ITF требует чётное количество цифр (минимум 6)"
+            else -> null  // Для других форматов (QR и т.д.) валидация не нужна
+        }
+    }
     fun updateGalleryBitmap(bitmap: Bitmap) {
         _uiState.update { it.copy(galleryBitmap = bitmap) }
     }
 }
 
 object BarCodeGenerator {
-    fun generate(data: String): Bitmap? {
+    fun generateBarcode(
+        data: String,
+        format: BarcodeFormat,
+        width: Int = when (format) {
+            BarcodeFormat.CODE_128 -> 1000
+            BarcodeFormat.CODE_39,
+            BarcodeFormat.CODE_93,
+            BarcodeFormat.ITF -> 1200  // Добавлены недостающие линейные форматы
+            else -> 600
+        },
+        height: Int = when (format) {
+            BarcodeFormat.CODE_128 -> 400
+            BarcodeFormat.CODE_39,
+            BarcodeFormat.CODE_93,
+            BarcodeFormat.ITF -> 300
+
+            else -> 600
+        }
+    ): Bitmap? {
         return try {
-            val writer = com.google.zxing.MultiFormatWriter()
-            val bitMatrix = writer.encode(data, com.google.zxing.BarcodeFormat.CODE_128, 600, 300)
-            val width = bitMatrix.width
-            val height = bitMatrix.height
+            val bitMatrix = MultiFormatWriter().encode(data, format, width, height)
             val bmp = createBitmap(width, height, Bitmap.Config.RGB_565)
             for (x in 0 until width) {
                 for (y in 0 until height) {
-                    bmp[x, y] =
-                        if (bitMatrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+                    bmp[x, y] = if (bitMatrix[x, y]) Color.BLACK else Color.WHITE
                 }
             }
             bmp
         } catch (e: Exception) {
+            e.printStackTrace()
             null
         }
     }
+
 
     @Composable
     fun BarcodeFromGalleryScreen() {

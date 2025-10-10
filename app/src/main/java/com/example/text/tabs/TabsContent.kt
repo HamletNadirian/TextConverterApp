@@ -1,5 +1,6 @@
 package com.example.text.tabs
 
+import BarCodeScreen
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi

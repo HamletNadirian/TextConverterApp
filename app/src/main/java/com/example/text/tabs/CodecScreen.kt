@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,8 +33,10 @@ fun CodecScreen(viewModel: CodecViewModel = viewModel()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.SpaceBetween,
+            .padding(16.dp)
+            .imePadding()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         OutlinedTextField(
@@ -39,16 +44,17 @@ fun CodecScreen(viewModel: CodecViewModel = viewModel()) {
             onValueChange = { viewModel.encryptFromInput(it) },
             label = { Text("Enter text") },
             modifier = Modifier
-                .weight(1f)       // занимает 1 часть
-                .fillMaxWidth(),  // по ширине весь экран
+                .weight(1f)
+                .fillMaxWidth(),
             singleLine = false
+
         )
 
         CipherSelector(
             selected = state.selectedCipher,
             onSelected = viewModel::onCipherSelected,
 
-        )
+            )
 
         OutlinedTextField(
             value = state.resultText,

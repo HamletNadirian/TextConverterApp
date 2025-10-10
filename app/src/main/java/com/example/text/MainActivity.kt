@@ -6,7 +6,6 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -19,11 +18,10 @@ import com.example.text.ui.theme.TabLayout
 import com.example.text.ui.theme.TextTheme
 
 class MainActivity : ComponentActivity() {
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         WindowCompat.setDecorFitsSystemWindows(window, false)
-
         setContent {
             TextTheme {
                 Box(
@@ -31,12 +29,14 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .padding(WindowInsets.systemBars.asPaddingValues())
                 ) {
-                    TabLayout()
-                    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        TabLayout()
+                    }
                 }
             }
         }
     }
 }
+
 
 
