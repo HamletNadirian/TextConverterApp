@@ -7,21 +7,29 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ExposedDropdownMenuBox
 import androidx.compose.material.ExposedDropdownMenuDefaults
+import androidx.compose.material.Icon
 import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Create
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -78,9 +87,9 @@ fun BarCodeScreenContent(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         SelectBarcodeType(
-            selectedType = state.selectedBarcodeType, onTypeSelected = onBarcodeTypeChanged
+            selectedType = state.selectedBarcodeType,
+            onTypeSelected = onBarcodeTypeChanged
         )
 
         InputText(state, onInputChanged)
@@ -89,28 +98,29 @@ fun BarCodeScreenContent(
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(
                 top = 4.dp, start = 16.dp, end = 16.dp
-            ),  // Отступы для выравнивания под полем
-            color = MaterialTheme.colorScheme.onSurfaceVariant  // Цвет подсказки
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
+        GenerateBarcodeButton(onGenerateClicked, state)
 
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxSize()
-                .imePadding()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally,
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            GenerateBarcodeButton(onGenerateClicked, state)
-            SavedBarcodeImage(state)
-            BarcodeFromGalleryScreen(
-                onGalleryBitmapUpdated = onGalleryBitmapUpdated,
-                onDecodedTextChanged = onDecodedTextChanged
-            )
+            Box(modifier = Modifier.weight(1f)) {
+                SavedBarcodeImage(state)
+            }
+            Box(modifier = Modifier.weight(1f)) {
+                BarcodeFromGalleryScreen(
+                    onGalleryBitmapUpdated = onGalleryBitmapUpdated,
+                    onDecodedTextChanged = onDecodedTextChanged
+                )
+            }
         }
     }
+
 }
 
 @Composable
@@ -183,15 +193,25 @@ private fun SelectBarcodeType(
 @Composable
 private fun SavedBarcodeImage(state: BarCodeUiState) {
     val context = LocalContext.current
-    Button(onClick = {
-        state.generatedBitmap?.let {
-            val success = saveBitmapToGallery(context, it)
-            Toast.makeText(
-                context, if (success) "Saved!" else "First, create a Barcode.", Toast.LENGTH_SHORT
-            ).show()
-        }
-    }, Modifier.fillMaxWidth()) {
-        Text("Saved")
+    Column(
+        modifier = Modifier,
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        CardWithButton(
+            onClick = {
+                state.generatedBitmap?.let {
+                    val success = saveBitmapToGallery(context, it)
+                    Toast.makeText(
+                        context,
+                        if (success) "Saved!" else "First, create a Barcode.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            },
+            icon = Icons.Default.Create,
+            contentDescription = "Save"
+        )
     }
 }
 
@@ -266,4 +286,51 @@ fun BarCodeScreenPreview() {
         onGenerateClicked = {},
         onGalleryBitmapUpdated = {},
         onDecodedTextChanged = {})
+}
+
+@Composable
+fun CardWithButton(
+    onClick: () -> Unit,
+    icon: ImageVector,
+    contentDescription: String,
+    text: String = "Save a barcode"
+) {
+    Card(
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth(),  // Заполняет весь родитель (Box), без 0.5f
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(16.dp)
+        ) {
+            ElevatedButton(
+                onClick = onClick,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                shape = RoundedCornerShape(8.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                modifier = Modifier.padding(top = 16.dp)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+
+                    ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = contentDescription,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(text)
+                }
+            }
+        }
+    }
 }

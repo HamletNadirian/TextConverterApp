@@ -1,5 +1,6 @@
 package com.example.text.viewmodel
 
+import CardWithButton
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.ImageDecoder
@@ -10,11 +11,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
 import androidx.lifecycle.ViewModel
@@ -65,9 +62,11 @@ class BarCodeViewModel : ViewModel() {
         }
         _uiState.update { it.copy(inputText = filtered) }
     }
+
     fun updateDecodedText(decodedText: String) {
         _uiState.value = _uiState.value.copy(inputText = decodedText)
     }
+
     fun updateBarcodeType(type: String) {
         _uiState.update { it.copy(selectedBarcodeType = type) }
     }
@@ -109,6 +108,7 @@ class BarCodeViewModel : ViewModel() {
             else -> null  // Для других форматов (QR и т.д.) валидация не нужна
         }
     }
+
     fun updateGalleryBitmap(bitmap: Bitmap) {
         _uiState.update { it.copy(galleryBitmap = bitmap) }
     }
@@ -123,10 +123,11 @@ fun UiGallery(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button(onClick = onImagePickClick, Modifier.fillMaxWidth()) {
-            Text("Select an image")
-        }
-        Spacer(modifier = Modifier.height(16.dp))
+        CardWithButton(
+            onClick = onImagePickClick,
+            icon = Icons.Filled.DateRange,
+            contentDescription = "Select"
+        )
     }
 }
 
