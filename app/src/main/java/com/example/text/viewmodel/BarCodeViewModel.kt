@@ -173,7 +173,6 @@ object BarCodeGenerator {
     ) {
         val context = LocalContext.current
         var bitmap by remember { mutableStateOf<Bitmap?>(null) }
-        var barcodeText by remember { mutableStateOf<String?>(null) }
 
         val launcher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent()
@@ -183,7 +182,7 @@ object BarCodeGenerator {
                     val bmp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         val source = ImageDecoder.createSource(context.contentResolver, uri)
                         ImageDecoder.decodeBitmap(source)
-                            .copy(Bitmap.Config.ARGB_8888, false) //
+                            .copy(Bitmap.Config.ARGB_8888, false) // важно для ZXing
                     } else {
                         @Suppress("DEPRECATION")
                         MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
@@ -195,33 +194,28 @@ object BarCodeGenerator {
                     val image = InputImage.fromBitmap(bmp, 0)
                     val scanner = BarcodeScanning.getClient()
 
-                    // Сначала пробуем ML Kit
                     scanner.process(image)
                         .addOnSuccessListener { barcodes ->
-                            if (barcodes.isNotEmpty()) {
-                                barcodeText = barcodes.joinToString("\n") { barcode ->
-                                    barcode.rawValue ?: "Unknown format"
-                                }
+                            val rawText = if (barcodes.isNotEmpty()) {
+                                barcodes.first().rawValue ?: ""
                             } else {
-                                // ⚙️ Если ML Kit не распознал — пробуем ZXing
-                                val zxingResult = decodeBarcodeWithZxing(bmp)
-                                barcodeText = zxingResult ?: "Barcode could not be found"
+                                decodeBarcodeWithZxing(bmp) ?: ""
                             }
-                            onDecodedTextChanged(barcodeText ?: "")
 
-                        }
-                        .addOnFailureListener {
-                            // ⚙️ Если ML Kit выдал ошибку — пробуем ZXing
-                            val zxingResult = decodeBarcodeWithZxing(bmp)
-                            barcodeText = zxingResult ?: "Recognition error: ${it.localizedMessage}"
-                            onDecodedTextChanged(barcodeText ?: "")
+                            // Если Code39 — декодируем Extended
+                            val decodedText = if (rawText.isNotEmpty() && isCode39(rawText)) {
+                                decodeExtendedCode39(rawText)
+                            } else rawText
 
+                            // Обновляем ViewModel, TextField получит результат
+                            onDecodedTextChanged(decodedText)
                         }
+
 
                 } catch (e: IOException) {
-                    barcodeText = "Image loading error: ${e.localizedMessage}"
+                    onDecodedTextChanged("Image loading error: ${e.localizedMessage}")
                 } catch (e: Exception) {
-                    barcodeText = "An error has occurred: ${e.localizedMessage}"
+                    onDecodedTextChanged("An error occurred: ${e.localizedMessage}")
                 }
             }
         }
@@ -229,6 +223,10 @@ object BarCodeGenerator {
         UiGallery(
             onImagePickClick = { launcher.launch("image/*") }
         )
+    }
+
+    fun isCode39(text: String): Boolean {
+        return true
     }
 
     fun decodeBarcodeWithZxing(bitmap: Bitmap): String? {
@@ -257,16 +255,9 @@ object BarCodeGenerator {
 
         return try {
             val result = reader.decode(bitmapBinary)
-            var text = result.text
-
-
-
             if (result.barcodeFormat == BarcodeFormat.CODE_39) {
-                text = decodeExtendedCode39(text)
-            }
-
-            return text
-
+                decodeExtendedCode39(result.text)
+            } else result.text
         } catch (e: NotFoundException) {
             null
         } catch (e: Exception) {
@@ -274,18 +265,16 @@ object BarCodeGenerator {
         }
     }
 
+    // Распознавание Code39 Extended (+A -> a, /, % -> спецсимволы)
     fun decodeExtendedCode39(input: String): String {
         val sb = StringBuilder()
         var i = 0
         while (i < input.length) {
             val c = input[i]
             if (c == '+' && i + 1 < input.length) {
-                // Преобразуем +A -> a
-                val next = input[i + 1]
-                sb.append(next.lowercaseChar())
+                sb.append(input[i + 1].lowercaseChar())
                 i += 2
             } else if (c == '%' && i + 1 < input.length) {
-                // Некоторые коды %A..%J => спецсимволы
                 val map = mapOf(
                     'A' to ' ', 'B' to '-', 'C' to '.', 'D' to '<',
                     'E' to '>', 'F' to '[', 'G' to ']', 'H' to '{',
@@ -298,7 +287,7 @@ object BarCodeGenerator {
                     'A' to '!', 'B' to '"', 'C' to '#', 'D' to '$',
                     'E' to '%', 'F' to '&', 'G' to '\'', 'H' to '(',
                     'I' to ')', 'J' to '*', 'K' to '+', 'L' to ',',
-                    'M' to '-', 'N' to '.', 'O' to '/',
+                    'M' to '-', 'N' to '.', 'O' to '/'
                 )
                 sb.append(map[input[i + 1]] ?: '?')
                 i += 2
@@ -309,5 +298,6 @@ object BarCodeGenerator {
         }
         return sb.toString()
     }
+
 
 }
