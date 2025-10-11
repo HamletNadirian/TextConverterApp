@@ -226,12 +226,55 @@ object BarCodeGenerator {
 
         return try {
             val result = reader.decode(bitmapBinary)
-            result.text
+            var text = result.text
+
+            if (result.barcodeFormat == BarcodeFormat.CODE_39) {
+                text = decodeExtendedCode39(text)
+            }
+
+            return text
+
         } catch (e: NotFoundException) {
             null
         } catch (e: Exception) {
             null
         }
+    }
+
+    fun decodeExtendedCode39(input: String): String {
+        val sb = StringBuilder()
+        var i = 0
+        while (i < input.length) {
+            val c = input[i]
+            if (c == '+' && i + 1 < input.length) {
+                // Преобразуем +A -> a
+                val next = input[i + 1]
+                sb.append(next.lowercaseChar())
+                i += 2
+            } else if (c == '%' && i + 1 < input.length) {
+                // Некоторые коды %A..%J => спецсимволы
+                val map = mapOf(
+                    'A' to ' ', 'B' to '-', 'C' to '.', 'D' to '<',
+                    'E' to '>', 'F' to '[', 'G' to ']', 'H' to '{',
+                    'I' to '}', 'J' to '*'
+                )
+                sb.append(map[input[i + 1]] ?: '?')
+                i += 2
+            } else if (c == '/' && i + 1 < input.length) {
+                val map = mapOf(
+                    'A' to '!', 'B' to '"', 'C' to '#', 'D' to '$',
+                    'E' to '%', 'F' to '&', 'G' to '\'', 'H' to '(',
+                    'I' to ')', 'J' to '*', 'K' to '+', 'L' to ',',
+                    'M' to '-', 'N' to '.', 'O' to '/',
+                )
+                sb.append(map[input[i + 1]] ?: '?')
+                i += 2
+            } else {
+                sb.append(c)
+                i++
+            }
+        }
+        return sb.toString()
     }
 
 }
