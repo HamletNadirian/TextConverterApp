@@ -9,11 +9,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -38,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.text.viewmodel.BarCodeGenerator.BarcodeFromGalleryScreen
@@ -45,13 +44,31 @@ import com.example.text.viewmodel.BarCodeUiState
 import com.example.text.viewmodel.BarCodeViewModel
 import java.io.IOException
 
-
-@OptIn(ExperimentalMaterialApi::class)
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun BarCodeScreen(viewModel: BarCodeViewModel = viewModel()) {
     val state by viewModel.uiState.collectAsState()
+    BarCodeScreenContent(
+        state = state,
+        onInputChanged = viewModel::updateInput,
+        onBarcodeTypeChanged = viewModel::updateBarcodeType,
+        onGenerateClicked = { viewModel.generateBarCode(state.inputText) },
+        onGalleryBitmapUpdated = viewModel::updateGalleryBitmap,
+        onDecodedTextChanged = viewModel::updateDecodedText
+    )
+}
 
+@OptIn(ExperimentalMaterialApi::class)
+@RequiresApi(Build.VERSION_CODES.P)
+@Composable
+fun BarCodeScreenContent(
+    state: BarCodeUiState,
+    onInputChanged: (String) -> Unit,
+    onBarcodeTypeChanged: (String) -> Unit,
+    onGenerateClicked: () -> Unit,
+    onGalleryBitmapUpdated: (Bitmap) -> Unit,
+    onDecodedTextChanged: (String) -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -63,18 +80,15 @@ fun BarCodeScreen(viewModel: BarCodeViewModel = viewModel()) {
     ) {
 
         SelectBarcodeType(
-            selectedType = state.selectedBarcodeType,
-            onTypeSelected = { viewModel.updateBarcodeType(it) }
+            selectedType = state.selectedBarcodeType, onTypeSelected = onBarcodeTypeChanged
         )
 
-        InputText(state, viewModel)
+        InputText(state, onInputChanged)
         Text(
             text = getInputHint(state.selectedBarcodeType),
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(
-                top = 4.dp,
-                start = 16.dp,
-                end = 16.dp
+                top = 4.dp, start = 16.dp, end = 16.dp
             ),  // Отступы для выравнивания под полем
             color = MaterialTheme.colorScheme.onSurfaceVariant  // Цвет подсказки
         )
@@ -89,21 +103,23 @@ fun BarCodeScreen(viewModel: BarCodeViewModel = viewModel()) {
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            GenerateBarcodeButton(viewModel, state)
+            GenerateBarcodeButton(onGenerateClicked, state)
             SavedBarcodeImage(state)
-            BarcodeFromGalleryScreen(viewModel)
+            BarcodeFromGalleryScreen(
+                onGalleryBitmapUpdated = onGalleryBitmapUpdated,
+                onDecodedTextChanged = onDecodedTextChanged
+            )
         }
     }
 }
 
 @Composable
 private fun ColumnScope.InputText(
-    state: BarCodeUiState,
-    viewModel: BarCodeViewModel
+    state: BarCodeUiState, onInputChanged: (String) -> Unit
 ) {
     OutlinedTextField(
         value = state.inputText,
-        onValueChange = { viewModel.updateInput(it) },
+        onValueChange = { onInputChanged(it) },
         label = { Text("Enter text") },
         modifier = Modifier
             .weight(0.5f)       // занимает 1 часть
@@ -124,22 +140,18 @@ private fun getInputHint(selectedType: String): String {  // Функция дл
 @Composable
 @OptIn(ExperimentalMaterialApi::class)
 private fun SelectBarcodeType(
-    selectedType: String,
-    onTypeSelected: (String) -> Unit
+    selectedType: String, onTypeSelected: (String) -> Unit
 ) {
     val options = listOf(
-        "QR_CODE", "AZTEC", "DATA_MATRIX",
-        "CODE_128", "CODE_39", "CODE_93", "ITF"
+        "QR_CODE", "AZTEC", "DATA_MATRIX", "CODE_128", "CODE_39", "CODE_93", "ITF"
     )
 
     var expanded by remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = {
+        expanded = expanded, onExpandedChange = {
             expanded = !expanded
-        }
-    ) {
+        }) {
         OutlinedTextField(
             readOnly = true,
             value = selectedType,
@@ -149,22 +161,18 @@ private fun SelectBarcodeType(
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier = Modifier.fillMaxWidth()
         )
         ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = {
+            expanded = expanded, onDismissRequest = {
                 expanded = false
-            }
-        ) {
+            }) {
             options.forEach { selectionOption ->
                 DropdownMenuItem(
                     onClick = {
                         onTypeSelected(selectionOption)
                         expanded = false
-                    }
-                ) {
+                    }) {
                     Text(text = selectionOption)
                 }
             }
@@ -179,9 +187,7 @@ private fun SavedBarcodeImage(state: BarCodeUiState) {
         state.generatedBitmap?.let {
             val success = saveBitmapToGallery(context, it)
             Toast.makeText(
-                context,
-                if (success) "Saved!" else "First, create a Barcode.",
-                Toast.LENGTH_SHORT
+                context, if (success) "Saved!" else "First, create a Barcode.", Toast.LENGTH_SHORT
             ).show()
         }
     }, Modifier.fillMaxWidth()) {
@@ -191,24 +197,18 @@ private fun SavedBarcodeImage(state: BarCodeUiState) {
 
 @Composable
 private fun GenerateBarcodeButton(
-    viewModel: BarCodeViewModel,
+    onGenerateClicked: () -> Unit,
     state: BarCodeUiState,
 ) {
 
     Button(
-        onClick = {
-            viewModel.generateBarCode(state.inputText)
-        },
-        modifier = Modifier
-            .fillMaxWidth()
+        onClick = onGenerateClicked, modifier = Modifier.fillMaxWidth()
     ) {
         Text("Generate Barcode")
     }
     state.errorMessage?.let { error ->
         Text(
-            text = error,
-            color = Color.Red,
-            modifier = Modifier.padding(top = 8.dp)
+            text = error, color = Color.Red, modifier = Modifier.padding(top = 8.dp)
         )
     }
     state.generatedBitmap?.let { bitmap ->
@@ -217,32 +217,11 @@ private fun GenerateBarcodeButton(
             contentDescription = "Generated barcode",
             modifier = Modifier.padding(top = 16.dp, bottom = 16.dp), /* .liquefiable(liquidState)*/
         )
-
-
     }
 }
-
-@Composable
-fun UiGallery(
-    onImagePickClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier,
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Button(onClick = onImagePickClick, Modifier.fillMaxWidth()) {
-            Text("Select an image")
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-    }
-}
-
 
 fun saveBitmapToGallery(
-    context: Context,
-    bitmap: Bitmap,
-    fileName: String = "image_${System.currentTimeMillis()}.png"
+    context: Context, bitmap: Bitmap, fileName: String = "image_${System.currentTimeMillis()}.png"
 ): Boolean {
     val contentValues = ContentValues().apply {
         put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
@@ -266,4 +245,25 @@ fun saveBitmapToGallery(
     } catch (e: IOException) {
         false
     }
+}
+
+@RequiresApi(Build.VERSION_CODES.P)
+@Preview(showBackground = true)
+@Composable
+fun BarCodeScreenPreview() {
+    val sampleBitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+    sampleBitmap.eraseColor(android.graphics.Color.GRAY)
+
+    BarCodeScreenContent(
+        state = BarCodeUiState(
+            inputText = "Preview Text",
+            selectedBarcodeType = "QR_CODE",
+            generatedBitmap = sampleBitmap,
+            errorMessage = "Sample error message"
+        ),
+        onInputChanged = {},
+        onBarcodeTypeChanged = {},
+        onGenerateClicked = {},
+        onGalleryBitmapUpdated = {},
+        onDecodedTextChanged = {})
 }

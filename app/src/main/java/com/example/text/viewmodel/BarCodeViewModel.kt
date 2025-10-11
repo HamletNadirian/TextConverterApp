@@ -1,6 +1,5 @@
 package com.example.text.viewmodel
 
-import UiGallery
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.ImageDecoder
@@ -9,12 +8,22 @@ import android.os.Build
 import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
 import androidx.lifecycle.ViewModel
@@ -105,6 +114,22 @@ class BarCodeViewModel : ViewModel() {
     }
 }
 
+@Composable
+fun UiGallery(
+    onImagePickClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier,
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Button(onClick = onImagePickClick, Modifier.fillMaxWidth()) {
+            Text("Select an image")
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
 object BarCodeGenerator {
     fun generateBarcode(
         data: String,
@@ -142,7 +167,10 @@ object BarCodeGenerator {
 
 
     @Composable
-    fun BarcodeFromGalleryScreen(viewModel: BarCodeViewModel) {
+    fun BarcodeFromGalleryScreen(
+        onGalleryBitmapUpdated: (Bitmap) -> Unit,
+        onDecodedTextChanged: (String) -> Unit
+    ) {
         val context = LocalContext.current
         var bitmap by remember { mutableStateOf<Bitmap?>(null) }
         var barcodeText by remember { mutableStateOf<String?>(null) }
@@ -155,14 +183,14 @@ object BarCodeGenerator {
                     val bmp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         val source = ImageDecoder.createSource(context.contentResolver, uri)
                         ImageDecoder.decodeBitmap(source)
-                            .copy(Bitmap.Config.ARGB_8888, false) // ✅ важно
+                            .copy(Bitmap.Config.ARGB_8888, false) //
                     } else {
                         @Suppress("DEPRECATION")
                         MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
                     }
 
                     bitmap = bmp
-                    viewModel.updateGalleryBitmap(bmp)
+                    onGalleryBitmapUpdated(bmp)
 
                     val image = InputImage.fromBitmap(bmp, 0)
                     val scanner = BarcodeScanning.getClient()
@@ -179,14 +207,14 @@ object BarCodeGenerator {
                                 val zxingResult = decodeBarcodeWithZxing(bmp)
                                 barcodeText = zxingResult ?: "Barcode could not be found"
                             }
-                            viewModel.updateDecodedText(barcodeText ?: "")
+                            onDecodedTextChanged(barcodeText ?: "")
 
                         }
                         .addOnFailureListener {
                             // ⚙️ Если ML Kit выдал ошибку — пробуем ZXing
                             val zxingResult = decodeBarcodeWithZxing(bmp)
                             barcodeText = zxingResult ?: "Recognition error: ${it.localizedMessage}"
-                            viewModel.updateDecodedText(barcodeText ?: "")
+                            onDecodedTextChanged(barcodeText ?: "")
 
                         }
 
@@ -283,4 +311,3 @@ object BarCodeGenerator {
     }
 
 }
-
