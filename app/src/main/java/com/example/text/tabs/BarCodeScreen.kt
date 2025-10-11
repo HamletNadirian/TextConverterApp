@@ -99,7 +99,7 @@ fun BarCodeScreen(viewModel: BarCodeViewModel = viewModel()) {
         ) {
             GenerateBarcodeButton(viewModel, state)
             SavedBarcodeImage(state)
-            BarcodeFromGalleryScreen()
+            BarcodeFromGalleryScreen(viewModel)
         }
 
     }

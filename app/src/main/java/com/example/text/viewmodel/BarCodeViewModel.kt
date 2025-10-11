@@ -22,7 +22,13 @@ import com.example.text.viewmodel.BarCodeGenerator.generateBarcode
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import com.google.zxing.BarcodeFormat
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.DecodeHintType
+import com.google.zxing.MultiFormatReader
 import com.google.zxing.MultiFormatWriter
+import com.google.zxing.NotFoundException
+import com.google.zxing.RGBLuminanceSource
+import com.google.zxing.common.HybridBinarizer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -56,12 +62,16 @@ class BarCodeViewModel : ViewModel() {
     }
 
     fun generateBarCode(text: String) {
-
         val currentState = _uiState.value
         val format = try {
             BarcodeFormat.valueOf(currentState.selectedBarcodeType)
         } catch (e: IllegalArgumentException) {
             BarcodeFormat.QR_CODE
+        }
+        val validationError = validateInput(text, format)
+        if (validationError != null) {
+            _uiState.update { it.copy(errorMessage = validationError) }
+            return
         }
         val bitmap = generateBarcode(
             text,
@@ -84,7 +94,6 @@ class BarCodeViewModel : ViewModel() {
         val digitsOnly = text.filter { char: Char -> char.isDigit() }
         val length = digitsOnly.length
         return when (format) {
-
             BarcodeFormat.ITF -> if (length % 2 == 0 && length >= 6) null else "ITF требует чётное количество цифр (минимум 6)"
             else -> null  // Для других форматов (QR и т.д.) валидация не нужна
         }
@@ -131,7 +140,7 @@ object BarCodeGenerator {
 
 
     @Composable
-    fun BarcodeFromGalleryScreen() {
+    fun BarcodeFromGalleryScreen(viewModel: BarCodeViewModel) {
         val context = LocalContext.current
         var bitmap by remember { mutableStateOf<Bitmap?>(null) }
         var barcodeText by remember { mutableStateOf<String?>(null) }
@@ -141,21 +150,22 @@ object BarCodeGenerator {
         ) { uri: Uri? ->
             uri?.let {
                 try {
-                    // Используем совместимый способ загрузки изображения
                     val bmp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         val source = ImageDecoder.createSource(context.contentResolver, uri)
                         ImageDecoder.decodeBitmap(source)
+                            .copy(Bitmap.Config.ARGB_8888, false) // ✅ важно
                     } else {
                         @Suppress("DEPRECATION")
                         MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
                     }
 
                     bitmap = bmp
+                    viewModel.updateGalleryBitmap(bmp)
 
-                    // Распознаем штрихкод
                     val image = InputImage.fromBitmap(bmp, 0)
                     val scanner = BarcodeScanning.getClient()
 
+                    // Сначала пробуем ML Kit
                     scanner.process(image)
                         .addOnSuccessListener { barcodes ->
                             if (barcodes.isNotEmpty()) {
@@ -163,19 +173,23 @@ object BarCodeGenerator {
                                     barcode.rawValue ?: "Unknown format"
                                 }
                             } else {
-                                barcodeText = "Barcode could not be found"
+                                // ⚙️ Если ML Kit не распознал — пробуем ZXing
+                                val zxingResult = decodeBarcodeWithZxing(bmp)
+                                barcodeText = zxingResult ?: "Barcode could not be found"
                             }
                         }
-                        .addOnFailureListener { exception ->
-                            barcodeText = "Recognition error: ${exception.localizedMessage}"
+                        .addOnFailureListener {
+                            // ⚙️ Если ML Kit выдал ошибку — пробуем ZXing
+                            val zxingResult = decodeBarcodeWithZxing(bmp)
+                            barcodeText = zxingResult ?: "Recognition error: ${it.localizedMessage}"
                         }
+
                 } catch (e: IOException) {
                     barcodeText = "Image loading error: ${e.localizedMessage}"
                 } catch (e: Exception) {
                     barcodeText = "An error has occurred: ${e.localizedMessage}"
                 }
             }
-
         }
 
         UiGallery(
@@ -184,4 +198,41 @@ object BarCodeGenerator {
             onImagePickClick = { launcher.launch("image/*") }
         )
     }
+
+
+    fun decodeBarcodeWithZxing(bitmap: Bitmap): String? {
+        val width = bitmap.width
+        val height = bitmap.height
+        val pixels = IntArray(width * height)
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+
+        val source = RGBLuminanceSource(width, height, pixels)
+        val bitmapBinary = BinaryBitmap(HybridBinarizer(source))
+
+        val reader = MultiFormatReader().apply {
+            setHints(
+                mapOf(
+                    DecodeHintType.POSSIBLE_FORMATS to listOf(
+                        BarcodeFormat.CODE_39,
+                        BarcodeFormat.CODE_93,
+                        BarcodeFormat.CODE_128,
+                        BarcodeFormat.ITF,
+                        BarcodeFormat.QR_CODE
+                    ),
+                    DecodeHintType.CHARACTER_SET to "UTF-8"
+                )
+            )
+        }
+
+        return try {
+            val result = reader.decode(bitmapBinary)
+            result.text
+        } catch (e: NotFoundException) {
+            null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
 }
+
