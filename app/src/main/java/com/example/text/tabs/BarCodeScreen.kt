@@ -8,6 +8,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,7 +38,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.text.viewmodel.BarCodeGenerator.BarcodeFromGalleryScreen
@@ -67,15 +67,7 @@ fun BarCodeScreen(viewModel: BarCodeViewModel = viewModel()) {
             onTypeSelected = { viewModel.updateBarcodeType(it) }
         )
 
-        OutlinedTextField(
-            value = state.inputText,
-            onValueChange = { viewModel.updateInput(it) },
-            label = { Text("Enter text") },
-            modifier = Modifier
-                .weight(0.5f)       // занимает 1 часть
-                .fillMaxWidth(),
-            textStyle = LocalTextStyle.current,
-        )
+        InputText(state, viewModel)
         Text(
             text = getInputHint(state.selectedBarcodeType),
             style = MaterialTheme.typography.bodySmall,
@@ -101,10 +93,23 @@ fun BarCodeScreen(viewModel: BarCodeViewModel = viewModel()) {
             SavedBarcodeImage(state)
             BarcodeFromGalleryScreen(viewModel)
         }
-
     }
+}
 
-
+@Composable
+private fun ColumnScope.InputText(
+    state: BarCodeUiState,
+    viewModel: BarCodeViewModel
+) {
+    OutlinedTextField(
+        value = state.inputText,
+        onValueChange = { viewModel.updateInput(it) },
+        label = { Text("Enter text") },
+        modifier = Modifier
+            .weight(0.5f)       // занимает 1 часть
+            .fillMaxWidth(),
+        textStyle = LocalTextStyle.current,
+    )
 }
 
 @Composable
@@ -115,6 +120,7 @@ private fun getInputHint(selectedType: String): String {  // Функция дл
         else -> "Введите любой текст для генерации"  // Для QR_CODE, AZTEC и т.д.
     }
 }
+
 @Composable
 @OptIn(ExperimentalMaterialApi::class)
 private fun SelectBarcodeType(
@@ -218,8 +224,6 @@ private fun GenerateBarcodeButton(
 
 @Composable
 fun UiGallery(
-    bitmap: Bitmap?,
-    barcodeText: String?,
     onImagePickClick: () -> Unit
 ) {
     Column(
@@ -230,37 +234,10 @@ fun UiGallery(
         Button(onClick = onImagePickClick, Modifier.fillMaxWidth()) {
             Text("Select an image")
         }
-
-        /*    bitmap?.let {
-                Image(
-                    bitmap = it.asImageBitmap(),
-                    contentDescription = "Загруженное изображение",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .padding(vertical = 8.dp)
-                )
-            }*/
-
         Spacer(modifier = Modifier.height(16.dp))
-
-        barcodeText?.let {
-            Text(
-                text = "Результат: $it",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(16.dp)
-            )
-        }
     }
 }
 
-
-@RequiresApi(Build.VERSION_CODES.P)
-@Preview
-@Composable
-fun BarCodeScreenPreview() {
-    BarCodeScreen()
-}
 
 fun saveBitmapToGallery(
     context: Context,

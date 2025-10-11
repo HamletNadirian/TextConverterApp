@@ -56,7 +56,9 @@ class BarCodeViewModel : ViewModel() {
         }
         _uiState.update { it.copy(inputText = filtered) }
     }
-
+    fun updateDecodedText(decodedText: String) {
+        _uiState.value = _uiState.value.copy(inputText = decodedText)
+    }
     fun updateBarcodeType(type: String) {
         _uiState.update { it.copy(selectedBarcodeType = type) }
     }
@@ -177,11 +179,15 @@ object BarCodeGenerator {
                                 val zxingResult = decodeBarcodeWithZxing(bmp)
                                 barcodeText = zxingResult ?: "Barcode could not be found"
                             }
+                            viewModel.updateDecodedText(barcodeText ?: "")
+
                         }
                         .addOnFailureListener {
                             // ⚙️ Если ML Kit выдал ошибку — пробуем ZXing
                             val zxingResult = decodeBarcodeWithZxing(bmp)
                             barcodeText = zxingResult ?: "Recognition error: ${it.localizedMessage}"
+                            viewModel.updateDecodedText(barcodeText ?: "")
+
                         }
 
                 } catch (e: IOException) {
@@ -193,12 +199,9 @@ object BarCodeGenerator {
         }
 
         UiGallery(
-            bitmap = bitmap,
-            barcodeText = barcodeText,
             onImagePickClick = { launcher.launch("image/*") }
         )
     }
-
 
     fun decodeBarcodeWithZxing(bitmap: Bitmap): String? {
         val width = bitmap.width
@@ -227,6 +230,8 @@ object BarCodeGenerator {
         return try {
             val result = reader.decode(bitmapBinary)
             var text = result.text
+
+
 
             if (result.barcodeFormat == BarcodeFormat.CODE_39) {
                 text = decodeExtendedCode39(text)
