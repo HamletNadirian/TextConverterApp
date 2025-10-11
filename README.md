@@ -34,5 +34,5 @@ styles, and encoding formats.
   <img src="docs/images/codec.jpg" width="160" alt="Encoding" />
   <img src="docs/images/stylish.jpg" width="160" alt="Fonts" />
   <img src="docs/images/decorate.jpg" width="160" alt="Decorations" />
-  <img src="docs/images/barcode.jpg" width="160" alt="Barcode" />
+  <img src="docs/images/barcode.png" width="160" alt="Barcode" />
 </p>
