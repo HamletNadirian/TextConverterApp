@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,9 +45,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.text.viewmodel.BarCodeGenerator.BarcodeFromGalleryScreen
 import com.example.text.viewmodel.BarCodeUiState
@@ -127,17 +131,19 @@ fun BarCodeScreenContent(
 private fun ColumnScope.InputText(
     state: BarCodeUiState, onInputChanged: (String) -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+
     OutlinedTextField(
         value = state.inputText,
         onValueChange = { onInputChanged(it) },
         label = { Text("Enter text") },
         modifier = Modifier
-            .weight(0.5f)       // занимает 1 часть
+            .height(screenHeight * 0.4f) // 40% вместо 50%
             .fillMaxWidth(),
         textStyle = LocalTextStyle.current,
     )
 }
-
 @Composable
 private fun getInputHint(selectedType: String): String {  // Функция для подсказки (остаётся)
     return when (selectedType) {
@@ -210,7 +216,8 @@ private fun SavedBarcodeImage(state: BarCodeUiState) {
                 }
             },
             icon = Icons.Default.Create,
-            contentDescription = "Save"
+            contentDescription = "Save",
+            text = "Save a barcode"
         )
     }
 }
@@ -293,21 +300,24 @@ fun CardWithButton(
     onClick: () -> Unit,
     icon: ImageVector,
     contentDescription: String,
-    text: String = "Save a barcode"
+    text: String = ""
 ) {
     Card(
         modifier = Modifier
             .padding(16.dp)
-            .fillMaxWidth(),  // Заполняет весь родитель (Box), без 0.5f
+            .fillMaxWidth()
+            .height(150.dp), // Заполняет весь родитель (Box), без 0.5f
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        border = CardDefaults.outlinedCardBorder(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = Color.Transparent
         )
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(16.dp)
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(top = 24.dp)
         ) {
             ElevatedButton(
                 onClick = onClick,
@@ -321,14 +331,22 @@ fun CardWithButton(
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-
-                    ) {
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = contentDescription,
-                        modifier = Modifier.padding(end = 8.dp)
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
-                    Text(text)
+                    Text(
+                        text,
+                        Modifier.padding(bottom = 8.dp),
+                        color = Color.Black,
+                        fontSize = 10.sp,
+                        lineHeight = 12.sp,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }

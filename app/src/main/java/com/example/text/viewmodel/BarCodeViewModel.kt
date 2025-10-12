@@ -126,10 +126,12 @@ fun UiGallery(
         CardWithButton(
             onClick = onImagePickClick,
             icon = Icons.Filled.DateRange,
-            contentDescription = "Select"
+            contentDescription = "Select",
+            "Pick Image From Gallery"
         )
     }
 }
+
 
 object BarCodeGenerator {
     fun generateBarcode(
