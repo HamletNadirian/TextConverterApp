@@ -24,7 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
 import androidx.lifecycle.ViewModel
-import com.example.text.viewmodel.BarCodeGenerator.generateBarcode
+import com.example.text.viewmodel.BarCodeGenerator.createBarcodeBitmap
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import com.google.zxing.BarcodeFormat
@@ -83,7 +83,7 @@ class BarCodeViewModel : ViewModel() {
             _uiState.update { it.copy(errorMessage = validationError) }
             return
         }
-        val bitmap = generateBarcode(
+        val bitmap = createBarcodeBitmap(
             text,
             format
         )
@@ -97,7 +97,7 @@ class BarCodeViewModel : ViewModel() {
         } else {
             _uiState.update { it.copy(generatedBitmap = bitmap, errorMessage = null) }
         }
-        _uiState.update { it.copy(generatedBitmap = bitmap) }
+        //  _uiState.update { it.copy(generatedBitmap = bitmap) }
     }
 
     private fun validateInput(text: String, format: BarcodeFormat): String? {
@@ -134,7 +134,7 @@ fun UiGallery(
 
 
 object BarCodeGenerator {
-    fun generateBarcode(
+    fun createBarcodeBitmap(
         data: String,
         format: BarcodeFormat,
         width: Int = when (format) {
@@ -167,7 +167,6 @@ object BarCodeGenerator {
             null
         }
     }
-
 
     @Composable
     fun BarcodeFromGalleryScreen(

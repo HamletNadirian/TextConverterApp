@@ -25,6 +25,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -44,6 +45,7 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.zxing.android.embedded)
     implementation(libs.mlkit.barcode)
+    implementation(libs.androidx.navigation.compose)
 
     implementation(libs.javax.mail)
     implementation(libs.commons.codec)
@@ -57,6 +59,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.compose.material3)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

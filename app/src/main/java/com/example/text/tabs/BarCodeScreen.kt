@@ -5,18 +5,17 @@ import android.os.Build
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.ExperimentalMaterialApi
@@ -43,7 +42,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -52,6 +50,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.text.viewmodel.BarCodeGenerator.BarcodeFromGalleryScreen
 import com.example.text.viewmodel.BarCodeUiState
 import com.example.text.viewmodel.BarCodeViewModel
@@ -59,13 +58,25 @@ import java.io.IOException
 
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
-fun BarCodeScreen(viewModel: BarCodeViewModel = viewModel()) {
+fun BarCodeScreen(navController: NavController, viewModel: BarCodeViewModel = viewModel()) {
     val state by viewModel.uiState.collectAsState()
+
     BarCodeScreenContent(
         state = state,
         onInputChanged = viewModel::updateInput,
         onBarcodeTypeChanged = viewModel::updateBarcodeType,
-        onGenerateClicked = { viewModel.generateBarCode(state.inputText) },
+        onGenerateClicked = {
+            viewModel.generateBarCode(state.inputText)
+            if (viewModel.uiState.value.generatedBitmap != null) {
+                println("DEBUG: Bitmap готов, навигируем на save")
+                navController.navigate("save")
+                if (navController == null) {
+                    println("DEBUG: Навигация пропущена из-за null navController")
+                }
+            } else {
+                println("DEBUG: Bitmap null, не навигируем")
+            }
+        },
         onGalleryBitmapUpdated = viewModel::updateGalleryBitmap,
         onDecodedTextChanged = viewModel::updateDecodedText
     )
@@ -107,24 +118,13 @@ fun BarCodeScreenContent(
         )
 
         GenerateBarcodeButton(onGenerateClicked, state)
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(modifier = Modifier.weight(1f)) {
-                SavedBarcodeImage(state)
-            }
-            Box(modifier = Modifier.weight(1f)) {
-                BarcodeFromGalleryScreen(
-                    onGalleryBitmapUpdated = onGalleryBitmapUpdated,
-                    onDecodedTextChanged = onDecodedTextChanged
-                )
-            }
+        Box(modifier = Modifier.weight(1f)) {
+            BarcodeFromGalleryScreen(
+                onGalleryBitmapUpdated = onGalleryBitmapUpdated,
+                onDecodedTextChanged = onDecodedTextChanged
+            )
         }
     }
-
 }
 
 @Composable
@@ -139,11 +139,12 @@ private fun ColumnScope.InputText(
         onValueChange = { onInputChanged(it) },
         label = { Text("Enter text") },
         modifier = Modifier
-            .height(screenHeight * 0.4f) // 40% вместо 50%
+            .height(screenHeight * 0.3f) // 40% вместо 50%
             .fillMaxWidth(),
         textStyle = LocalTextStyle.current,
     )
 }
+
 @Composable
 private fun getInputHint(selectedType: String): String {  // Функция для подсказки (остаётся)
     return when (selectedType) {
@@ -238,13 +239,14 @@ private fun GenerateBarcodeButton(
             text = error, color = Color.Red, modifier = Modifier.padding(top = 8.dp)
         )
     }
-    state.generatedBitmap?.let { bitmap ->
+
+    /*state.generatedBitmap?.let { bitmap ->
         Image(
             bitmap = bitmap.asImageBitmap(),
             contentDescription = "Generated barcode",
-            modifier = Modifier.padding(top = 16.dp, bottom = 16.dp), /* .liquefiable(liquidState)*/
+            modifier = Modifier.padding(top = 16.dp, bottom = 16.dp),
         )
-    }
+    }*/
 }
 
 fun saveBitmapToGallery(
@@ -305,7 +307,7 @@ fun CardWithButton(
     Card(
         modifier = Modifier
             .padding(16.dp)
-            .fillMaxWidth()
+            .width(150.dp)
             .height(150.dp), // Заполняет весь родитель (Box), без 0.5f
         shape = RoundedCornerShape(16.dp),
         border = CardDefaults.outlinedCardBorder(),

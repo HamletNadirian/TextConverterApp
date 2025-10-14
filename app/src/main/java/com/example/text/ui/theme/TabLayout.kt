@@ -23,16 +23,20 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import com.example.text.tabs.TabsContent
+import com.example.text.viewmodel.BarCodeViewModel
 import com.google.accompanist.pager.ExperimentalPagerApi
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPagerApi::class)
 @Composable
-fun TabLayout() {
+fun TabLayout(navController: NavHostController, viewModel: BarCodeViewModel = viewModel()) {
     val pagerState = rememberPagerState(pageCount = { 4 })
     val tabData = listOf(
         "Codec" to Icons.Default.Lock,
@@ -73,7 +77,7 @@ fun TabLayout() {
                 }
             }
 
-            TabsContent(pagerState = pagerState)
+            TabsContent(pagerState = pagerState, navController, viewModel = viewModel)
         }
     }
 }
@@ -83,5 +87,5 @@ fun TabLayout() {
 @Preview
 @Composable
 fun TabLayoutPreview() {
-    TabLayout()
+    TabLayout(navController = NavHostController(LocalContext.current))
 }

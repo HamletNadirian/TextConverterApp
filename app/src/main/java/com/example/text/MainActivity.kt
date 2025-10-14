@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
-import com.example.text.ui.theme.TabLayout
 import com.example.text.ui.theme.TextTheme
 
 class MainActivity : ComponentActivity() {
@@ -30,7 +29,8 @@ class MainActivity : ComponentActivity() {
                         .padding(WindowInsets.systemBars.asPaddingValues())
                 ) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        TabLayout()
+                        //     TabLayout()
+                        AppNavHost()
                     }
                 }
             }
