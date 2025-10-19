@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -113,7 +113,7 @@ fun StylishTextItemDecor(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp) // фиксированная высота карточки
+            .height(64.dp) // фиксированная высота карточки
 
             .padding(vertical = 4.dp)
             .clickable { onClick() },
@@ -135,7 +135,7 @@ fun StylishTextItemDecor(
                     modifier = Modifier.size(24.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.DateRange,
+                        imageVector = Icons.Default.ContentCopy,
                         contentDescription = "Copy",
                         tint = Color.Gray,
                         modifier = Modifier.size(20.dp)

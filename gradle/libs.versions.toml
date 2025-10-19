@@ -1,5 +1,5 @@
 [versions]
-agp = "8.10.1"
+agp = "8.13.0"
 kotlin = "2.0.21"
 coreKtx = "1.16.0"
 junit = "4.13.2"
@@ -17,6 +17,8 @@ lifecycle = "2.6.1"
 zxing = "4.1.0"
 mlkit-barcode = "17.2.0"
 material3Version = "1.4.0"
+navigationCompose = "2.9.0"
+compose-material-icons-extended = "1.7.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -43,8 +45,8 @@ lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel
 zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxing" }
 mlkit-barcode = { group = "com.google.mlkit", name = "barcode-scanning", version.ref = "mlkit-barcode" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3Version" }
-
-
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "compose-material-icons-extended" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

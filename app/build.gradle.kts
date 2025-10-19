@@ -46,6 +46,7 @@ dependencies {
     implementation(libs.zxing.android.embedded)
     implementation(libs.mlkit.barcode)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.compose.material.icons.extended)
 
     implementation(libs.javax.mail)
     implementation(libs.commons.codec)
