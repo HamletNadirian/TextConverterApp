@@ -1,6 +1,6 @@
 package com.example.text.viewmodel
 
-import CardWithButton
+import UiGallery
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.ImageDecoder
@@ -9,17 +9,11 @@ import android.os.Build
 import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
@@ -35,6 +29,7 @@ import com.google.zxing.MultiFormatWriter
 import com.google.zxing.NotFoundException
 import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.common.HybridBinarizer
+import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -52,11 +47,18 @@ data class BarCodeUiState(
 class BarCodeViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(BarCodeUiState())
     val uiState: StateFlow<BarCodeUiState> = _uiState
+    val textResultFromCamera = mutableStateOf("")
+
+    init {
+        textResultFromCamera.value.let { newText ->
+            _uiState.update { it.copy(inputText = newText) }
+        }
+    }
 
     fun updateInput(text: String) {
         val currentState = _uiState.value
         val filtered = if (listOf("ITF").contains(currentState.selectedBarcodeType)) {
-            text.filter { char: Char -> char.isDigit() }  // Явный параметр: char: Char
+            text.filter { char: Char -> char.isDigit() }
         } else {
             text
         }
@@ -105,7 +107,7 @@ class BarCodeViewModel : ViewModel() {
         val length = digitsOnly.length
         return when (format) {
             BarcodeFormat.ITF -> if (length % 2 == 0 && length >= 6) null else "ITF требует чётное количество цифр (минимум 6)"
-            else -> null  // Для других форматов (QR и т.д.) валидация не нужна
+            else -> null
         }
     }
 
@@ -114,24 +116,13 @@ class BarCodeViewModel : ViewModel() {
     }
 }
 
+@androidx.compose.ui.tooling.preview.Preview
 @Composable
-fun UiGallery(
-    onImagePickClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier,
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        CardWithButton(
-            onClick = onImagePickClick,
-            icon = Icons.Filled.DateRange,
-            contentDescription = "Select",
-            "Pick Image From Gallery"
-        )
-    }
+fun UiGalleryPreview() {
+    UiGallery(
+        onImagePickClick = {}
+    )
 }
-
 
 object BarCodeGenerator {
     fun createBarcodeBitmap(
@@ -141,7 +132,7 @@ object BarCodeGenerator {
             BarcodeFormat.CODE_128 -> 1000
             BarcodeFormat.CODE_39,
             BarcodeFormat.CODE_93,
-            BarcodeFormat.ITF -> 1200  // Добавлены недостающие линейные форматы
+            BarcodeFormat.ITF -> 1200
             else -> 600
         },
         height: Int = when (format) {
@@ -168,6 +159,11 @@ object BarCodeGenerator {
         }
     }
 
+    @Composable
+    fun BarcodeFromScanScreen(
+        onDecodedTextChanged: (String) -> Unit
+    ) {
+    }
     @Composable
     fun BarcodeFromGalleryScreen(
         onGalleryBitmapUpdated: (Bitmap) -> Unit,
@@ -209,7 +205,6 @@ object BarCodeGenerator {
                                 decodeExtendedCode39(rawText)
                             } else rawText
 
-                            // Обновляем ViewModel, TextField получит результат
                             onDecodedTextChanged(decodedText)
                         }
 
@@ -221,12 +216,30 @@ object BarCodeGenerator {
                 }
             }
         }
-
         UiGallery(
             onImagePickClick = { launcher.launch("image/*") }
         )
     }
 
+    fun startScan(launcher: androidx.activity.result.ActivityResultLauncher<ScanOptions>) {
+        val options = ScanOptions().apply {
+            val options = ScanOptions()
+            options.setDesiredBarcodeFormats(ScanOptions.ALL_CODE_TYPES)
+            options.setPrompt("Scan a barcode")
+            options.setCameraId(0)
+            options.setBeepEnabled(false)
+            options.setBarcodeImageEnabled(false)
+        }
+        launcher.launch(options)
+    }
+
+    @Composable
+    fun BarcodeFromGalleryScreenPreview() {
+        BarcodeFromGalleryScreen(
+            onGalleryBitmapUpdated = {},
+            onDecodedTextChanged = {}
+        )
+    }
     fun isCode39(text: String): Boolean {
         return true
     }
@@ -267,7 +280,6 @@ object BarCodeGenerator {
         }
     }
 
-    // Распознавание Code39 Extended (+A -> a, /, % -> спецсимволы)
     fun decodeExtendedCode39(input: String): String {
         val sb = StringBuilder()
         var i = 0
@@ -300,6 +312,4 @@ object BarCodeGenerator {
         }
         return sb.toString()
     }
-
-
 }

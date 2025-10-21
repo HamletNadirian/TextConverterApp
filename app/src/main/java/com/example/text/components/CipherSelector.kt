@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.text.ciphers.CipherType
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
@@ -56,3 +57,12 @@ fun CipherSelector(
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@Preview
+@Composable
+fun CipherSelectorPreview() {
+    var selectedCipher by remember { mutableStateOf(CipherType.HEX) }
+    CipherSelector(selected = selectedCipher, onSelected = { selectedCipher = it })
+}
+

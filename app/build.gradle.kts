@@ -47,7 +47,18 @@ dependencies {
     implementation(libs.mlkit.barcode)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.material.icons.extended)
+// ML Kit Barcode Scanning
+    implementation(libs.mlkit.barcode.scanning)
+    implementation(libs.camera.mlkit.vision)
 
+// CameraX dependencies for camera integration
+    implementation(libs.androidx.camera.core)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.view)
+    implementation(libs.zxing.core)
+// Accompanist Permissions for handling runtime permissions
+    implementation(libs.accompanistPermissions)
     implementation(libs.javax.mail)
     implementation(libs.commons.codec)
     implementation(libs.accompanist.pager)
@@ -61,6 +72,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.foundation)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

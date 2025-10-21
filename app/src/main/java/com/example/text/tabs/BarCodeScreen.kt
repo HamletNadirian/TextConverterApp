@@ -1,21 +1,24 @@
 import android.content.ContentValues
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Build
 import android.provider.MediaStore
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.ExperimentalMaterialApi
@@ -24,7 +27,7 @@ import androidx.compose.material.ExposedDropdownMenuDefaults
 import androidx.compose.material.Icon
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -49,17 +52,47 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.text.viewmodel.BarCodeGenerator.BarcodeFromGalleryScreen
+import com.example.text.viewmodel.BarCodeGenerator.startScan
 import com.example.text.viewmodel.BarCodeUiState
 import com.example.text.viewmodel.BarCodeViewModel
+import com.journeyapps.barcodescanner.ScanContract
 import java.io.IOException
+
 
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun BarCodeScreen(navController: NavController, viewModel: BarCodeViewModel = viewModel()) {
+
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    val barcodeLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
+        result?.contents?.let { scannedText ->
+            viewModel.updateInput(scannedText)
+        }
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            startScan(barcodeLauncher)
+        } else {
+            Toast.makeText(context, "Camera permission denied", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun checkCameraPermission() {
+        when {
+            ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA)
+                    == PackageManager.PERMISSION_GRANTED -> startScan(barcodeLauncher)
+
+            else -> permissionLauncher.launch(android.Manifest.permission.CAMERA)
+        }
+    }
 
     BarCodeScreenContent(
         state = state,
@@ -78,7 +111,8 @@ fun BarCodeScreen(navController: NavController, viewModel: BarCodeViewModel = vi
             }
         },
         onGalleryBitmapUpdated = viewModel::updateGalleryBitmap,
-        onDecodedTextChanged = viewModel::updateDecodedText
+        onDecodedTextChanged = viewModel::updateDecodedText,
+        onScanClicked = { checkCameraPermission() }
     )
 }
 
@@ -91,7 +125,9 @@ fun BarCodeScreenContent(
     onBarcodeTypeChanged: (String) -> Unit,
     onGenerateClicked: () -> Unit,
     onGalleryBitmapUpdated: (Bitmap) -> Unit,
-    onDecodedTextChanged: (String) -> Unit
+    onDecodedTextChanged: (String) -> Unit,
+    onScanClicked: () -> Unit
+
 ) {
     Column(
         modifier = Modifier
@@ -118,12 +154,54 @@ fun BarCodeScreenContent(
         )
 
         GenerateBarcodeButton(onGenerateClicked, state)
-        Box(modifier = Modifier.weight(1f)) {
-            BarcodeFromGalleryScreen(
-                onGalleryBitmapUpdated = onGalleryBitmapUpdated,
-                onDecodedTextChanged = onDecodedTextChanged
-            )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    BarcodeFromGalleryScreen(
+                        onGalleryBitmapUpdated = onGalleryBitmapUpdated,
+                        onDecodedTextChanged = onDecodedTextChanged
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CardWithButton(
+                        onClick = onScanClicked,
+                        icon = Icons.Filled.DateRange,
+                        contentDescription = "Select",
+                        "Scan a barcode from a camera",
+                    )
+                }
+            }
         }
+    }
+}
+
+@Composable
+fun UiGallery(
+    onImagePickClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier,
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        CardWithButton(
+            onClick = onImagePickClick,
+            icon = Icons.Filled.DateRange,
+            contentDescription = "Select",
+            "Pick Image From Gallery",
+        )
     }
 }
 
@@ -139,18 +217,18 @@ private fun ColumnScope.InputText(
         onValueChange = { onInputChanged(it) },
         label = { Text("Enter text") },
         modifier = Modifier
-            .height(screenHeight * 0.3f) // 40% вместо 50%
+            .height(screenHeight * 0.35f)
             .fillMaxWidth(),
         textStyle = LocalTextStyle.current,
     )
 }
 
 @Composable
-private fun getInputHint(selectedType: String): String {  // Функция для подсказки (остаётся)
+private fun getInputHint(selectedType: String): String {
     return when (selectedType) {
         "ITF" -> "Требуется чётное количество цифр (минимум 6)"
         "CODE_128", "CODE_39", "CODE_93" -> "Требуются только цифры и буквы (A-Z)"
-        else -> "Введите любой текст для генерации"  // Для QR_CODE, AZTEC и т.д.
+        else -> "Введите любой текст для генерации"
     }
 }
 
@@ -198,32 +276,6 @@ private fun SelectBarcodeType(
 }
 
 @Composable
-private fun SavedBarcodeImage(state: BarCodeUiState) {
-    val context = LocalContext.current
-    Column(
-        modifier = Modifier,
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        CardWithButton(
-            onClick = {
-                state.generatedBitmap?.let {
-                    val success = saveBitmapToGallery(context, it)
-                    Toast.makeText(
-                        context,
-                        if (success) "Saved!" else "First, create a Barcode.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            },
-            icon = Icons.Default.Create,
-            contentDescription = "Save",
-            text = "Save a barcode"
-        )
-    }
-}
-
-@Composable
 private fun GenerateBarcodeButton(
     onGenerateClicked: () -> Unit,
     state: BarCodeUiState,
@@ -239,14 +291,6 @@ private fun GenerateBarcodeButton(
             text = error, color = Color.Red, modifier = Modifier.padding(top = 8.dp)
         )
     }
-
-    /*state.generatedBitmap?.let { bitmap ->
-        Image(
-            bitmap = bitmap.asImageBitmap(),
-            contentDescription = "Generated barcode",
-            modifier = Modifier.padding(top = 16.dp, bottom = 16.dp),
-        )
-    }*/
 }
 
 fun saveBitmapToGallery(
@@ -294,7 +338,9 @@ fun BarCodeScreenPreview() {
         onBarcodeTypeChanged = {},
         onGenerateClicked = {},
         onGalleryBitmapUpdated = {},
-        onDecodedTextChanged = {})
+        onDecodedTextChanged = {},
+        onScanClicked = {}
+    )
 }
 
 @Composable
@@ -302,12 +348,12 @@ fun CardWithButton(
     onClick: () -> Unit,
     icon: ImageVector,
     contentDescription: String,
-    text: String = ""
+    text: String = "",
 ) {
     Card(
         modifier = Modifier
             .padding(16.dp)
-            .width(150.dp)
+            .fillMaxWidth()
             .height(150.dp), // Заполняет весь родитель (Box), без 0.5f
         shape = RoundedCornerShape(16.dp),
         border = CardDefaults.outlinedCardBorder(),
@@ -354,3 +400,4 @@ fun CardWithButton(
         }
     }
 }
+
