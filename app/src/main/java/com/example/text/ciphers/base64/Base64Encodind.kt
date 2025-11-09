@@ -14,6 +14,10 @@ object Base64Encoding {
 
     @SuppressLint("NewApi")
     fun decode(encodedString:String):String{
-        return String(Base64.getDecoder().decode(encodedString))
+        return try {
+            String(Base64.getDecoder().decode(encodedString))
+        } catch (e: Exception) {
+            "Некорректный Base64 формат"
+        }
     }
 }

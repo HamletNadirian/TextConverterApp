@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">TextConverter</string>
+    <string name="error_encoding">Ошибка кодирования</string>
+    <string name="error_decoding">Ошибка декодирования</string>
+    <string name="text_copied">Текст скопирован!</string>
+    <string name="text_cleared">Текст очищен!</string>
+    <string name="pasted">Вставлено!</string>
 </resources>

@@ -101,13 +101,7 @@ fun BarCodeScreen(navController: NavController, viewModel: BarCodeViewModel = vi
         onGenerateClicked = {
             viewModel.generateBarCode(state.inputText)
             if (viewModel.uiState.value.generatedBitmap != null) {
-                println("DEBUG: Bitmap готов, навигируем на save")
                 navController.navigate("save")
-                if (navController == null) {
-                    println("DEBUG: Навигация пропущена из-за null navController")
-                }
-            } else {
-                println("DEBUG: Bitmap null, не навигируем")
             }
         },
         onGalleryBitmapUpdated = viewModel::updateGalleryBitmap,

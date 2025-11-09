@@ -159,7 +159,7 @@ class EncDecAppUnitTests {
     @Test
     fun binary_strToBinary_validBinary() {
         val input = "01001000 01101001"
-        val result = StringToBinary.strToBinary(input)
+        val result = StringToBinary.binaryToString(input)
         assertTrue(result.contains("H"))
         assertTrue(result.contains("i"))
     }

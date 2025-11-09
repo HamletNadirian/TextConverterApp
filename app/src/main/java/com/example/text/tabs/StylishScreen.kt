@@ -2,6 +2,7 @@ package com.example.text.tabs
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,6 +22,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,7 +30,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -73,7 +74,7 @@ fun StylishScreen(viewModel: StylishViewModel = viewModel()) {
                         state.inputText.ifEmpty { "Enter Text" },
                         index
                     ),
-                   // styleName = styleName,
+                    // styleName = styleName,
                     isSelected = index == state.selectedStyle,
                     onClick = { viewModel.changeStyle(index) },
                     onCopyClick = {
@@ -117,14 +118,16 @@ fun StylishTextItem(
             .clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) Color(0xFFE0F0FF) else Color.White
-        )
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+            else MaterialTheme.colorScheme.surface
+        ), border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically        )
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        )
         {
             Row(verticalAlignment = Alignment.CenterVertically)
             {
@@ -135,7 +138,7 @@ fun StylishTextItem(
                     Icon(
                         imageVector = Icons.Default.ContentCopy,
                         contentDescription = "Copy",
-                        tint = Color.Gray,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -148,7 +151,7 @@ fun StylishTextItem(
                     Icon(
                         imageVector = Icons.Default.Share,
                         contentDescription = "Share",
-                        tint = Color.Gray,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -158,17 +161,17 @@ fun StylishTextItem(
             Column(
                 modifier = Modifier.weight(1f),
 
-            ) {
-             /*   Text(
-                    text = styleName,
-                    fontSize = 14.sp,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )*/
+                ) {
+                /*   Text(
+                       text = styleName,
+                       fontSize = 14.sp,
+                       color = Color.Gray,
+                       modifier = Modifier.padding(bottom = 4.dp)
+                   )*/
                 Text(
                     text = text,
                     fontSize = 16.sp,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
