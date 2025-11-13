@@ -74,16 +74,11 @@ class BarCodeViewModel : ViewModel() {
     }
 
     fun generateBarCode(text: String) {
-        if (text.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Введите текст для генерации") }
-            return
-        }
         val currentState = _uiState.value
         val format = try {
             BarcodeFormat.valueOf(currentState.selectedBarcodeType)
         } catch (e: IllegalArgumentException) {
-            _uiState.update { it.copy(errorMessage = "Неподдерживаемый формат баркода") }
-            return
+            BarcodeFormat.QR_CODE
         }
         val validationError = validateInput(text, format)
         if (validationError != null) {
@@ -138,7 +133,6 @@ object BarCodeGenerator {
             BarcodeFormat.CODE_39,
             BarcodeFormat.CODE_93,
             BarcodeFormat.ITF -> 1200
-
             else -> 600
         },
         height: Int = when (format) {
@@ -170,7 +164,6 @@ object BarCodeGenerator {
         onDecodedTextChanged: (String) -> Unit
     ) {
     }
-
     @Composable
     fun BarcodeFromGalleryScreen(
         onGalleryBitmapUpdated: (Bitmap) -> Unit,
@@ -247,7 +240,6 @@ object BarCodeGenerator {
             onDecodedTextChanged = {}
         )
     }
-
     fun isCode39(text: String): Boolean {
         return true
     }

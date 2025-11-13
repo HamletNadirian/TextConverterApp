@@ -21,8 +21,7 @@ import nadirian.hamlet.android.encdecapp.model.utf_8_code.UTF8Encryptor
 data class CodecUiState(
     val inputText: String = "",
     val selectedCipher: CipherType = CipherType.MD5,
-    val resultText: String = "",
-    val errorMessage: String? = null
+    val resultText: String = ""
 )
 
 class CodecViewModel : ViewModel() {
@@ -52,53 +51,38 @@ class CodecViewModel : ViewModel() {
     private fun updateResultEncryption() {
         val input = _uiState.value.inputText
         val cipher = _uiState.value.selectedCipher
-        try {
-            val result = when (cipher) {
-                CipherType.MD5 -> MD5.md5(input)
-                CipherType.CRC32 -> CRC32CheckSum.crc32checksum(input)
-                CipherType.CRC16 -> CRC16CheckSum.crc16checksum(input)
-                CipherType.BASE64 -> Base64Encoding.encode(input)
-                CipherType.BINARY -> StringToBinary.convertStringToBinary(input)
-                CipherType.ASCII -> ASCIIEncryptor.stringToACII(input)
-                CipherType.HEX -> StringToHex.convertStringToHex(input)
-                CipherType.UTF8 -> UTF8Encryptor.stringToUTF8(input)
-                CipherType.SHA256 -> SHA256.sha256(input)
-                else -> input
-            }
-            _uiState.update { it.copy(resultText = result.toString(), errorMessage = null) }
 
-        } catch (e: Exception) {
-            _uiState.update {
-                it.copy(
-                    resultText = "",
-                    errorMessage = "Ошибка кодирования: ${e.localizedMessage}"
-                )
-            }
+        val result = when (cipher) {
+            CipherType.MD5 -> MD5.md5(input)
+            CipherType.CRC32 -> CRC32CheckSum.crc32checksum(input)
+            CipherType.CRC16 -> CRC16CheckSum.crc16checksum(input)
+            CipherType.BASE64 -> Base64Encoding.encode(input)
+            CipherType.BINARY -> StringToBinary.convertStringToBinary(input)
+            CipherType.ASCII -> ASCIIEncryptor.stringToACII(input)
+            CipherType.HEX -> StringToHex.convertStringToHex(input)
+            CipherType.UTF8 -> UTF8Encryptor.stringToUTF8(input)
+            CipherType.SHA256 -> SHA256.sha256(input)
+            else -> input
         }
+
+        _uiState.update { it.copy(resultText = result.toString()) }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun updateResultDecryption() {
         val result = _uiState.value.resultText
         val cipher = _uiState.value.selectedCipher
-        try {
-            val decoded = when (cipher) {
-                CipherType.BASE64 -> Base64Encoding.decode(result)
-                CipherType.BINARY -> StringToBinary.binaryToString(result)
-                CipherType.ASCII -> ASCIIEncryptor.asciiToString(result)
-                CipherType.HEX -> StringToHex.convertHexToString(result)
-                CipherType.UTF8 -> UTF8Encryptor.decodeUTF8ToString(result)
 
-                else -> result
-            }
-            _uiState.update { it.copy(inputText = decoded.toString(), errorMessage = null) }
-        } catch (e: Exception) {
-            _uiState.update {
-                it.copy(
-                    inputText = "",
-                    errorMessage = "Ошибка декодирования: ${e.localizedMessage}"
-                )
-            }
+        val decoded = when (cipher) {
+            CipherType.BASE64 -> Base64Encoding.decode(result)
+            CipherType.BINARY -> StringToBinary.binaryToString(result)
+            CipherType.ASCII -> ASCIIEncryptor.asciiToString(result)
+            CipherType.HEX -> StringToHex.convertHexToStringSafe(result)
+            CipherType.UTF8 -> UTF8Encryptor.decodeUTF8ToString(result)
+
+            else -> result
         }
+
+        _uiState.update { it.copy(inputText = decoded.toString()) }
     }
 }
