@@ -50,6 +50,8 @@ class BarCodeViewModel : ViewModel() {
     val textResultFromCamera = mutableStateOf("")
 
     init {
+        println("ViewModel created: $this")
+
         textResultFromCamera.value.let { newText ->
             _uiState.update { it.copy(inputText = newText) }
         }
@@ -89,6 +91,8 @@ class BarCodeViewModel : ViewModel() {
             text,
             format
         )
+        println("createBarcodeBitmap result: ${bitmap != null}")
+
         if (bitmap == null) {
             _uiState.update {
                 it.copy(
@@ -99,6 +103,9 @@ class BarCodeViewModel : ViewModel() {
         } else {
             _uiState.update { it.copy(generatedBitmap = bitmap, errorMessage = null) }
         }
+        println("State updated: generatedBitmap = NOT NULL, size: ${bitmap?.width}x${bitmap?.height}")
+
+        println("Immediate state check: ${_uiState.value.generatedBitmap != null}")
         //  _uiState.update { it.copy(generatedBitmap = bitmap) }
     }
 
@@ -145,6 +152,8 @@ object BarCodeGenerator {
         }
     ): Bitmap? {
         return try {
+            println("🔄 Creating barcode: format=$format, data='$data', size=${width}x${height}")
+
             val bitMatrix = MultiFormatWriter().encode(data, format, width, height)
             val bmp = createBitmap(width, height, Bitmap.Config.RGB_565)
             for (x in 0 until width) {
@@ -152,8 +161,12 @@ object BarCodeGenerator {
                     bmp[x, y] = if (bitMatrix[x, y]) Color.BLACK else Color.WHITE
                 }
             }
+            println("✅ Bitmap created: ${bmp.width}x${bmp.height}, config: ${bmp.config}")
+
             bmp
         } catch (e: Exception) {
+            println("❌ Error creating barcode: ${e.message}")
+
             e.printStackTrace()
             null
         }

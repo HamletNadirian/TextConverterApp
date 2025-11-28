@@ -37,6 +37,7 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +71,10 @@ fun BarCodeScreen(navController: NavController, viewModel: BarCodeViewModel = vi
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
+    // Отслеживаем изменения состояния
+    LaunchedEffect(state.generatedBitmap) {
+        println("BarCodeScreen: generatedBitmap changed to ${state.generatedBitmap != null}")
+    }
     val barcodeLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         result?.contents?.let { scannedText ->
             viewModel.updateInput(scannedText)
@@ -99,9 +104,19 @@ fun BarCodeScreen(navController: NavController, viewModel: BarCodeViewModel = vi
         onInputChanged = viewModel::updateInput,
         onBarcodeTypeChanged = viewModel::updateBarcodeType,
         onGenerateClicked = {
+            println("=== GENERATE CLICKED ===")
+            println("Before generation - input: '${state.inputText}', bitmap: ${state.generatedBitmap != null}")
             viewModel.generateBarCode(state.inputText)
+            Thread.sleep(100) // небольшая задержка
+
             if (viewModel.uiState.value.generatedBitmap != null) {
+                println("✅ SUCCESS: Bitmap generated, navigating to save")
+
                 navController.navigate("save")
+            } else {
+                println("❌ FAILED: Bitmap is null, not navigating")
+
+                Toast.makeText(context, "Failed to generate barcode", Toast.LENGTH_SHORT).show()
             }
         },
         onGalleryBitmapUpdated = viewModel::updateGalleryBitmap,
@@ -146,8 +161,19 @@ fun BarCodeScreenContent(
             ),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        // Показываем ошибку, если есть
+        state.errorMessage?.let { error ->
+            Text(
+                text = error,
+                color = Color.Red,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            )
+        }
 
         GenerateBarcodeButton(onGenerateClicked, state)
+
         Box(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -208,7 +234,10 @@ private fun ColumnScope.InputText(
 
     OutlinedTextField(
         value = state.inputText,
-        onValueChange = { onInputChanged(it) },
+        onValueChange = {
+            println("Input changed to: '$it'")
+            onInputChanged(it)
+        },
         label = { Text("Enter text") },
         modifier = Modifier
             .height(screenHeight * 0.35f)
